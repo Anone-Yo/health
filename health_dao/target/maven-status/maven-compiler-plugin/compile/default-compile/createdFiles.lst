@@ -1,0 +1,11 @@
+com\anone\dao\LoginDao.class
+com\anone\dao\MenuDao.class
+com\anone\dao\CheckItemDao.class
+com\anone\dao\PermissionDao.class
+com\anone\dao\RoleDao.class
+com\anone\dao\MemberDao.class
+com\anone\dao\UserDao.class
+com\anone\dao\OrderDao.class
+com\anone\dao\OrderSettingDao.class
+com\anone\dao\SetMealDao.class
+com\anone\dao\CheckGroupDao.class

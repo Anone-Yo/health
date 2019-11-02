@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.anone.dao.OrderSettingDao">
+    <!--查询预约设置是否存在-->
+    <select id="checkOrderSettingByOrderDate" parameterType="date" resultType="integer">
+        select count(*) from t_ordersetting where orderDate=#{orderDate}
+    </select>
+
+    <!--修改预约设置的人数-->
+    <update id="editNumberByOrderDate" parameterType="com.anone.pojo.OrderSetting">
+        update t_ordersetting set number=#{number} where orderDate=#{orderDate}
+    </update>
+
+    <!--新增预约设置-->
+    <insert id="add" parameterType="com.anone.pojo.OrderSetting">
+        insert into t_ordersetting(orderDate,number,reservations) values (#{orderDate},#{number},#{reservations})
+    </insert>
+
+    <!--查询某年某月所有预约设置-->
+    <select id="show" resultType="com.anone.pojo.OrderSetting">
+        select * from t_ordersetting where orderDate between #{startDate} and #{endDate}
+    </select>
+    <!--根据日期查询预约设置-->
+    <select id="findOrderSettingByOrderDate" parameterType="string" resultType="com.anone.pojo.OrderSetting">
+        select * from t_ordersetting where orderDate=#{orderDate}
+    </select>
+    <!--根据预约日期修改预约人数 -->
+    <update id="editOrderSettingByOrderDate">
+        update t_ordersetting
+        <set>
+            <if test="number != null">
+                number=#{number} ,
+            </if>
+            <if test="reservations != null">
+                reservations=#{reservations} ,
+            </if>
+        </set>
+        where orderDate=#{orderDate}
+    </update>
+    <!--清空预约设置-->
+    <delete id="clearOrderSetting" parameterType="string">
+        delete from t_ordersetting where orderDate &lt;=#{value}
+    </delete>
+</mapper>

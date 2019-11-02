@@ -1,0 +1,10 @@
+com\anone\service\impl\CheckItemServiceImpl.class
+com\anone\service\impl\MenuServiceImpl.class
+com\anone\service\impl\UserServiceImpl.class
+com\anone\service\impl\MemberServiceImpl.class
+com\anone\service\impl\OrderServiceImpl.class
+com\anone\service\impl\OrderSettingServiceImpl.class
+com\anone\service\impl\RoleServiceImpl.class
+com\anone\service\impl\CheckGroupServiceImpl.class
+com\anone\service\impl\PermissionServiceImpl.class
+com\anone\service\impl\SetMealServiceImpl.class

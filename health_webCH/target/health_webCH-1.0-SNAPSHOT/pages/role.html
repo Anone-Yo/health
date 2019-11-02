@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>传智健康</title>
+    <meta name="description" content="传智健康">
+    <meta name="keywords" content="传智健康">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>系统设置
+            <small>角色管理</small>
+        </h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>系统设置</el-breadcrumb-item>
+            <el-breadcrumb-item>角色管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <el-input placeholder="角色名称/角色关键字/角色描述" v-model="pagination.queryString" style="width: 200px;"
+                          class="filter-item" clearable @clear="findPage()"
+                          @keyup.enter.native="findPage('search')"></el-input>
+                <el-button @click="findPage('search')" class="dalfBut">查询</el-button>
+                <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+            </div>
+            <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column type="index" align="center" label="序号"></el-table-column>
+                <el-table-column prop="name" label="角色名称" align="center"></el-table-column>
+                <el-table-column prop="keyword" label="角色关键字" align="center"></el-table-column>
+                <el-table-column prop="description" label="角色描述" align="center"></el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div class="pagination-container">
+                <el-pagination
+                        class="pagiantion"
+                        @size-change="handleSizeChange"
+                        @current-change="handleCurrentChange"
+                        :current-page="pagination.currentPage"
+                        :page-sizes="[10,20,40,60,80,100]"
+                        :page-size="pagination.pageSize"
+                        layout="total,sizes,prev, pager, next, jumper"
+                        :total="pagination.total">
+                </el-pagination>
+            </div>
+            <!-- 添加标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="新增角色" :visible.sync="dialogFormVisible" :close-on-click-modal="dialogAutoExit">
+                    <template>
+                        <el-tabs v-model="activeName" type="card">
+                            <el-tab-pane label="基本信息" name="first">
+                                <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right"
+                                         label-width="100px">
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="角色名称" prop="name">
+                                                <el-input v-model="formData.name"/>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="角色关键字" prop="keyword">
+                                                <el-input v-model="formData.keyword"/>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="24">
+                                            <el-form-item label="角色描述">
+                                                <el-input v-model="formData.description" type="textarea"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                </el-form>
+                            </el-tab-pane>
+                            <el-tab-pane label="权限信息" name="second">
+                                <div class="checkScrol">
+                                    <table class="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>选择</th>
+                                            <th>权限名称</th>
+                                            <th>权限关键字</th>
+                                            <th>权限说明</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="(p) in permission_tableData">
+                                            <td>
+                                                <input :id="p.id" v-model="permissionIds" type="checkbox" :value="p.id">
+                                            </td>
+                                            <td><label :for="p.id">{{p.name}}</label></td>
+                                            <td><label :for="p.id">{{p.keyword}}</label></td>
+                                            <td><label :for="p.id">{{p.description}}</label></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="菜单信息" name="menu">
+                                <div class="checkScrol">
+                                    <div class="datatable">
+
+                                        <el-tree
+                                                :props="defaultProps"
+                                                :data="menu_tableData"
+                                                :default-checked-keys="menuIds"
+                                                node-key="id" show-checkbox ref="add_tree"
+                                                @check="getCheckedKeys('add_tree')"
+                                                default-expand-all
+                                        >
+                                        </el-tree>
+
+                                    </div>
+                                </div>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </template>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取消</el-button>
+                        <el-button type="primary" @click="handleAdd()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+
+            <!-- 编辑标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="编辑角色" :visible.sync="dialogFormVisible4Edit" :close-on-click-modal="dialogAutoExit">
+                    <template>
+                        <el-tabs v-model="activeName" type="card">
+                            <el-tab-pane label="基本信息" name="first">
+                                <el-form ref="dataEditForm" :model="formData" :rules="rules" label-position="right"
+                                         label-width="100px">
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="角色名称" prop="name">
+                                                <el-input v-model="formData.name"/>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="角色关键字" prop="keyword">
+                                                <el-input v-model="formData.keyword"/>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="24">
+                                            <el-form-item label="角色描述">
+                                                <el-input v-model="formData.description" type="textarea"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                </el-form>
+                            </el-tab-pane>
+                            <el-tab-pane label="权限信息" name="second">
+                                <div class="checkScrol">
+                                    <table class="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>选择</th>
+                                            <th>权限名称</th>
+                                            <th>权限关键字</th>
+                                            <th>权限说明</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="p in permission_tableData">
+                                            <td>
+                                                <input :id="p.id" v-model="permissionIds" type="checkbox" :value="p.id">
+                                            </td>
+                                            <td><label :for="p.id">{{p.name}}</label></td>
+                                            <td><label :for="p.id">{{p.keyword}}</label></td>
+                                            <td><label :for="p.id">{{p.description}}</label></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="菜单信息" name="menu">
+                                <div class="checkScrol">
+                                    <div class="datatable">
+                                        <el-tree
+                                                :props="defaultProps"
+                                                :data="menu_tableData"
+                                                :default-checked-keys="menuIds"
+                                                node-key="id" show-checkbox ref="edit_tree"
+                                                @check-change="getCheckedKeys('edit_tree')"
+                                                default-expand-all
+                                        >
+                                        </el-tree>
+
+                                    </div>
+                                </div>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </template>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible4Edit=false">取消</el-button>
+                        <el-button type="primary" @click="handleUpdate()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<!-- 引入组件库 -->
+<script src="../js/vue.js"></script>
+<script src="../plugins/elementui/index.js"></script>
+<!--<script type="text/javascript" src="../js/jquery.min.js"></script>-->
+<script src="../js/axios-0.18.0.js"></script>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            dialogAutoExit: false, //弹窗不自动关闭
+            default_expand_all: true,
+            pagination: {//分页数据模型
+                currentPage: 1,//当前页码
+                pageSize: 10,//每页显示的记录数
+                total: 0,//总记录数
+                queryString: null//查询条件
+            },
+            defaultProps: {
+                label: 'name',
+                children: 'children'
+            },
+            p: {},
+            menu: {},
+            dataList: [],//当前页要展示的分页列表数据
+            formData: {},//表单数据
+            permission_tableData: [],//添加/修改窗口中权限列表数据
+            menu_tableData: [],///添加/修改窗口中的菜单列表数据
+            permissionIds: [],///添加/修改窗口中权限复选框对应id (已选中的)
+            menuIds: [], //添加/修改窗口中菜单复选框对应id (已选中的)
+            menuIds_up: [],
+            activeName: 'first',//添加/编辑窗口Tab标签名称
+            dialogFormVisible: false,//增加表单是否可见，即是否弹出添加窗口
+            dialogFormVisible4Edit: false,//修改表单是否可见，即是否弹出修改窗口
+            rules: {//校验规则
+                name: [{required: true, message: '角色名称为必填项', trigger: 'blur'}],
+                keyword: [{required: true, message: '关键字为必填项', trigger: 'blur'}]
+            }
+        },
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            this.findPage();
+        },
+        methods: {
+
+            getCheckedKeys(name) {
+                console.log('测试!!!!!!!!!!');
+                // return;
+                // console.log(this.$refs.add_tree.getCheckedKeys());
+                // console.log(this.$refs.add_tree.getCheckedNodes());
+                var addMenuObjs = this.$refs[name].getCheckedNodes();
+                if (addMenuObjs.length === 0) {
+                    this.menuIds_up = [];
+                    return;
+                }
+
+                var menuIds_set = new Set();
+                for (var menu_item of addMenuObjs) {
+                    //如果有父菜单,也添加进去
+                    if (menu_item.parentMenuId) {
+                        menuIds_set.add(menu_item.parentMenuId)
+                    }
+                    // 存入选中的菜单
+                    menuIds_set.add(menu_item.id)
+                }
+                // menuIds_up 变量为要上传的菜单集合数据
+                this.menuIds_up = Array.from(menuIds_set);
+                console.log('上传的菜单集合数据');
+                console.log(this.menuIds_up);
+
+            },
+
+            // 弹出添加窗口 menus
+            handleCreate() {
+                //弹出添加窗口将表单数据清空
+                this.resetForm();
+                this.dialogFormVisible = true;
+                try {
+                    //将表单验证结果清空
+                    this.$refs['dataAddForm'].clearValidate();
+                } catch (e) {
+                }
+                //获得添加权限页面的所有权限集合
+                axios.get('/permission/findAll.do').then(res => {
+                    if (res.data.flag) {
+                        this.permission_tableData = res.data.data;
+                    }
+                }).catch(res => {
+                    this.$message.error('获取权限列表失败');
+                });
+                //获得所有菜单集合
+                axios.get('/menu/findAll.do').then(res => {
+                    if (res.data.flag) {
+                        this.menu_tableData = res.data.data;
+                    }
+                }).catch(res => {
+                    this.$message.error('获取菜单列表失败');
+                });
+
+
+            },
+            // 添加
+            handleAdd() {
+                // 表单校验
+                this.$refs['dataAddForm'].validate((valid) => {
+                    // 所有验证通过后才会为true,只要有一个失败就是false
+                    if (valid) {
+                        var RoleObjData = this.formData; //组装一个角色对象放入基本信息
+                        RoleObjData.permissionNums = this.permissionIds;  //对象中放入权限集合
+                        RoleObjData.menuNums = this.menuIds_up;  //对象中放入菜单集合
+                        console.log("即将添加的角色信息!");
+                        console.log(RoleObjData);
+                        // return;
+                        axios.post('/role/add.do', RoleObjData).then(res => {
+                            if (res.data.flag) {
+                                this.$message.success(res.data.message);
+                                this.findPage();
+                            } else {
+                                this.$message.error(res.data.message);
+                            }
+                        }).catch(res => {
+                            this.$message.error(res.data.message)
+                        });
+                        this.dialogFormVisible = false;
+                    } else {
+                        // console.log('error submit!!');
+                        // 中止form表单的提交
+                        return false;
+                    }
+                });
+
+
+            },
+
+            // 分页查询
+            findPage() {
+               var params= {
+                    currentPage: this.pagination.currentPage,
+                        pageSize: this.pagination.pageSize,
+                        queryString: this.pagination.queryString,
+                }
+                axios.post('/role/findpage.do', params).then(res => {
+                    // res.data  {flag:ture,message:'',data:{total:, rows:}}
+                    // 响应回后  this.dataList = res.data.data.rows, this.pagination.total=res.data.data.total
+                    this.dataList = res.data.rows;
+                    this.pagination.total = res.data.total;
+                })
+
+            },
+            // 删除
+            handleDelete(row) {
+                //alert(JSON.stringify(row));
+                this.$confirm('此操作将永久【删除】该项, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    // 确定时调用的方法
+                    // var checkItemId = row.id;
+                   axios.get('/role/delete?id='+row.id).then(res => {
+                        // axios.delete('/manage/checkItem', {params: {id: row.id}}).then(res => {
+                        this.$message({
+                            message: res.data.message,
+                            type: res.data.flag ? 'success' : 'error'
+                        });
+                        // 如果成功
+                        if (res.data.flag) {
+                            // 刷新列表
+                            this.findPage();
+                        }
+                    })
+                }).catch(() => {
+                    // 取消时调用
+                });
+            },
+            // 弹出修改窗口, 回显数据
+            handleEdit(row) {
+                this.resetForm();
+                var id = row.id;
+                this.dialogFormVisible4Edit = true; // 弹出编辑窗口
+                try {
+                    //将表单验证结果清空
+                    this.$refs['dataEditForm'].clearValidate();
+                } catch (e) {
+                }
+
+                //获取角色信息
+                axios.get("/role/update.do?id="+row.id).then(res => {
+                    if (res.data.flag) {
+                        // 成功，展示数据
+                        this.formData = res.data.data;
+                        //获得所有权限集合
+                        axios.get('/permission/findAll.do').then(res => {
+                            if (res.data.flag) {
+                                this.permission_tableData = res.data.data;
+                                //获取角色关联的菜单集合
+                                axios.get('/permission/rolePermissionById.do?id='+row.id).then(res => {
+                                    if (res.data.flag) {
+                                        this.permissionIds=res.data.data;
+                                    } else {
+                                        this.$message({
+                                            message: res.data.message,
+                                            type: 'error'
+                                        });
+                                    }
+                                }).catch(res => {
+                                    this.$message({
+                                        message: res.data.message,
+                                        type: 'error'
+                                    });
+
+                                })
+
+                            } else {
+                                // 失败就提示
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'error'
+                                });
+                            }
+                        }).catch(res => {
+                            // 失败就提示
+                            this.$message({
+                                message: res.data.message,
+                                type: 'error'
+                            });
+                        });
+
+                        //获得所有菜单集合
+                        axios.get('/menu/findAll.do').then(res => {
+                            if (res.data.flag) {
+                                this.menu_tableData = res.data.data;
+                                console.log("获取到所有菜单数据");
+                                console.log(this.menu_tableData)
+                                //获取角色关联的菜单集合
+                                axios.get('/menu/roleMenuById.do?id='+row.id).then(res => {
+                                    if (res.data.flag) {
+                                        this.menuIds=res.data.data;
+                                    } else {
+                                        this.$message({
+                                            message: res.data.message,
+                                            type: 'error'
+                                        });
+                                    }
+                                }).catch(res => {
+                                    this.$message({
+                                        message: res.data.message,
+                                        type: 'error'
+                                    });
+
+                                })
+                            } else {
+                                this.$message.error(res.data.message);
+                            }
+                        }).catch(res => {
+                            this.$message.error(res.data.message);
+                        });
+
+
+
+
+                    }
+                });
+
+
+            },
+            // 修改数据后提交
+            handleUpdate() {
+                // 表单校验
+                // 提交
+                // 结果处理
+                this.$refs['dataEditForm'].validate((valid) => {
+                    // 所有验证通过后才会为true,只要有一个失败就是false
+                    if (valid) {
+                        //alert('submit!');
+                        // 发送ajax axios 进行更新
+                        const RoleObj = this.formData;
+                        RoleObj.permissions = null;   //将权限组对象清空,不需要再传送到服务端
+                        RoleObj.permissionNums = this.permissionIds;
+                        RoleObj.menuNums = this.menuIds_up;
+                        console.log("即将提交更新的数据!!!!!!!");
+                        console.log(JSON.stringify(RoleObj));
+                        // return;
+                        axios.put('/role/edit.do', RoleObj).then(res => {
+                            if (res.data.flag) {
+                                this.$message.success(res.data.message);
+                                this.findPage();
+                            }
+                        }).catch(res => {
+                            this.$message.error('更新角色信息失败');
+                        });
+                        this.dialogFormVisible4Edit = false;
+
+                    } else {
+                        console.log('error submit!!');
+                        // 中止form表单的提交
+                        return false;
+                    }
+                });
+            },
+            // 重置表单
+            resetForm() {
+                this.formData = {}; // 清空表单数据
+                this.permissionIds = [];
+                this.menuIds = [];
+                this.menuIds_up = [];
+                this.activeName = 'first';
+                this.menu = {};
+                this.p = {}
+            },
+            handleSizeChange(size) {
+                this.pagination.pageSize = size;
+                this.findPage();
+            },
+
+            // 切换页码时，需要刷新列表
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage = currentPage;
+                this.findPage();
+            }
+        }
+    })
+</script>
+</html>
